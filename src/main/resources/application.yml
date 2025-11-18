@@ -15,10 +15,10 @@ spring:
 eureka:
   instance:
     prefer-ip-address: false
-    hostname: localhost
+    hostname: code-factory.co.kr
 
   client:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://localhost:3150/eureka/
+      defaultZone: http://${eureka.instance.hostname}:3150/eureka/
