@@ -21,14 +21,6 @@ public class SwaggerConfig {
 			.group("hub-api")
 			.displayName("HUB API")
 			.pathsToMatch("/v1/hubs/**")
-			.build();
-	}
-
-	@Bean
-	public GroupedOpenApi hubRouteAPI() {
-		return GroupedOpenApi.builder()
-			.group("hubRoute-api")
-			.displayName("HUB ROUTE API")
 			.pathsToMatch("/v1/hub-routes/**")
 			.build();
 	}
