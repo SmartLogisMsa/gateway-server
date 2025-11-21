@@ -11,7 +11,7 @@ public class SwaggerConfig {
 		return GroupedOpenApi.builder()
 			.group("user-api")
 			.displayName("USER API")
-			.pathsToMatch("/v1/user/**")
+			.pathsToMatch("/v1/users/**")
 			.build();
 	}
 
@@ -20,16 +20,7 @@ public class SwaggerConfig {
 		return GroupedOpenApi.builder()
 			.group("hub-api")
 			.displayName("HUB API")
-			.pathsToMatch("/v1/hub/**")
-			.build();
-	}
-
-	@Bean
-	public GroupedOpenApi orderAPI() {
-		return GroupedOpenApi.builder()
-			.group("order-api")
-			.displayName("ORDER API")
-			.pathsToMatch("/v1/order/**")
+			.pathsToMatch("/v1/hubs/**")
 			.build();
 	}
 
@@ -38,7 +29,7 @@ public class SwaggerConfig {
 		return GroupedOpenApi.builder()
 			.group("company-api")
 			.displayName("COMPANY API")
-			.pathsToMatch("/v1/company/**")
+			.pathsToMatch("/v1/companies/**")
 			.build();
 	}
 
@@ -47,7 +38,7 @@ public class SwaggerConfig {
 		return GroupedOpenApi.builder()
 			.group("product-api")
 			.displayName("PRODUCT API")
-			.pathsToMatch("/v1/product/**")
+			.pathsToMatch("/v1/products/**")
 			.build();
 	}
 }
