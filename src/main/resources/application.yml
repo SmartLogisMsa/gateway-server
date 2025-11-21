@@ -28,6 +28,8 @@ springdoc:
         name: USER API
       - url: /hub-service/v3/api-docs
         name: HUB API
+      - url: /hub-routes/v3/api-docs
+        name: HUB ROUTE API
       - url: /order-service/v3/api-docs
         name: ORDER API
       - url: /company-service/v3/api-docs

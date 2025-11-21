@@ -25,6 +25,15 @@ public class SwaggerConfig {
 	}
 
 	@Bean
+	public GroupedOpenApi hubRouteAPI() {
+		return GroupedOpenApi.builder()
+			.group("hubRoute-api")
+			.displayName("HUB ROUTE API")
+			.pathsToMatch("/v1/hub-routes/**")
+			.build();
+	}
+
+	@Bean
 	public GroupedOpenApi companyAPI() {
 		return GroupedOpenApi.builder()
 			.group("company-api")
