@@ -12,6 +12,29 @@ spring:
         enabled: true
         service-id: config-server
 
+springdoc:
+  enable-native-support: true
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /api-docs.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+    doc-expansion: full
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - url: /user-service/v3/api-docs
+        name: USER API
+      - url: /hub-service/v3/api-docs
+        name: HUB API
+      - url: /order-service/v3/api-docs
+        name: ORDER API
+      - url: /company-service/v3/api-docs
+        name: COMPANY API
+      - url: /product-service/v3/api-docs
+        name: PRODUCT API
+
 eureka:
   instance:
     prefer-ip-address: false
