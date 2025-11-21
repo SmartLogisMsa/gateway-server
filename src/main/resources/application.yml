@@ -34,6 +34,8 @@ springdoc:
         name: COMPANY API
       - url: /product-service/v3/api-docs
         name: PRODUCT API
+      - url: /delivery-service/v3/api-docs
+        name: DELIVERY API
 
 eureka:
   instance:
