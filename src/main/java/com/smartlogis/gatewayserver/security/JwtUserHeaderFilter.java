@@ -1,4 +1,4 @@
-package com.smartlogis.gatewayserver.config;
+package com.smartlogis.gatewayserver.security;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,27 +19,22 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 @Component
-public class AddUserInfoFilter implements GlobalFilter, Ordered {
+public class JwtUserHeaderFilter implements GlobalFilter, Ordered {
 
     private static final String HEADER_USER_ID = "X-User-Id";
     private static final String HEADER_USER_NAME = "X-User-Name";
     private static final String HEADER_ROLES = "X-User-Role";
 
-    @Override
-    public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE;
-    }
+	@Override
+	public int getOrder() {
+		return 4;
+	}
 
-    @Override
+	@Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         return ReactiveSecurityContextHolder.getContext()
-                .map(ctx -> ctx == null ? null : ctx.getAuthentication())
+                .map(securityContext -> securityContext == null ? null : securityContext.getAuthentication())
                 .flatMap(auth -> {
-                    if (!(auth instanceof JwtAuthenticationToken)) {
-                        // 인증이 없거나 Jwt가 아니면 그냥 통과
-                        return chain.filter(exchange);
-                    }
-
                     JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) auth;
                     Jwt jwt = jwtAuth.getToken();
 
@@ -53,10 +48,6 @@ public class AddUserInfoFilter implements GlobalFilter, Ordered {
                     ServerWebExchange mutatedExchange = exchange.mutate().request(mutatedRequest).build();
 
                     return chain.filter(mutatedExchange);
-                })
-                .switchIfEmpty(chain.filter(exchange))
-                .onErrorResume(ex -> {
-                    return chain.filter(exchange);
                 });
     }
 
