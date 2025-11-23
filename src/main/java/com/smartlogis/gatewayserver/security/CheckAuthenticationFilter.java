@@ -3,6 +3,7 @@ package com.smartlogis.gatewayserver.security;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -16,12 +17,8 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class CheckAuthenticationFilter implements GlobalFilter, Ordered {
-
-	@Override
-	public int getOrder() {
-		return 0;
-	}
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class CheckAuthenticationFilter implements GlobalFilter {
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {

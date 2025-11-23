@@ -3,6 +3,7 @@ package com.smartlogis.gatewayserver.security;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -16,14 +17,10 @@ import reactor.core.publisher.Mono;
 
 @Component
 @RequiredArgsConstructor
-public class BlacklistFilter implements GlobalFilter, Ordered {
+@Order(Ordered.HIGHEST_PRECEDENCE + 10)
+public class CheckBlacklistFilter implements GlobalFilter {
 
 	private final BlacklistService blacklistService;
-
-	@Override
-	public int getOrder() {
-		return 1;
-	}
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {

@@ -3,6 +3,7 @@ package com.smartlogis.gatewayserver.security;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -13,15 +14,11 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 @Component
-public class JwtUserHeaderFilter implements GlobalFilter, Ordered {
+@Order(Ordered.LOWEST_PRECEDENCE)
+public class JwtUserHeaderFilter implements GlobalFilter {
 
     private static final String HEADER_USER_ID = "X-User-Id";
     private static final String HEADER_USER_NAME = "X-User-Name";
-
-	@Override
-	public int getOrder() {
-		return 4;
-	}
 
 	@Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {

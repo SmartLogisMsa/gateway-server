@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
@@ -18,6 +19,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 
+import com.smartlogis.gatewayserver.auth.BlacklistService;
 import com.smartlogis.gatewayserver.auth.RedisUserService;
 import com.smartlogis.gatewayserver.message.UserPublisher;
 import com.smartlogis.gatewayserver.message.UserRoleMessage;
@@ -28,18 +30,15 @@ import reactor.core.publisher.Mono;
 
 @Component
 @RequiredArgsConstructor
-public class CheckRoleFilter implements GatewayFilter, Ordered {
+@Order(Ordered.HIGHEST_PRECEDENCE + 20)
+public class CheckUserCacheFilter implements GatewayFilter {
 
 	private final RedisUserService redisUserService;
+	private final BlacklistService blacklistService;
 
 	private final UserPublisher userPublisher;
 
 	private static final String HEADER_ROLES = "X-User-Role";
-
-	@Override
-	public int getOrder() {
-		return 2;
-	}
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -58,8 +57,7 @@ public class CheckRoleFilter implements GatewayFilter, Ordered {
 					UserRoleMessage userRoleMessage = new UserRoleMessage(userId, LocalDateTime.now());
 					userPublisher.publish(UserRoutingKey.ROLE_MISMATCH, userRoleMessage);
 
-					exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-					return exchange.getResponse().setComplete();
+					return addBlacklist(jwt, exchange);
 				}
 
 				exchange.getRequest().mutate()
@@ -68,6 +66,14 @@ public class CheckRoleFilter implements GatewayFilter, Ordered {
 
 				return chain.filter(exchange);
 			});
+	}
+
+	private Mono<Void> addBlacklist(Jwt jwt, ServerWebExchange exchange) {
+		long expiration = jwt.getExpiresAt().getEpochSecond() - System.currentTimeMillis() / 1000;
+		blacklistService.add(jwt.getId(), expiration);
+
+		exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+		return exchange.getResponse().setComplete();
 	}
 
 	private Set<String> extractRoles(Jwt jwt) {
