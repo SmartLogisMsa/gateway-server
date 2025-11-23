@@ -19,7 +19,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 
 import com.smartlogis.gatewayserver.auth.RedisUserService;
-import com.smartlogis.gatewayserver.auth.UserServiceClient;
 import com.smartlogis.gatewayserver.message.UserPublisher;
 import com.smartlogis.gatewayserver.message.UserRoleMessage;
 import com.smartlogis.gatewayserver.message.UserRoutingKey;
@@ -34,7 +33,6 @@ public class CheckRoleFilter implements GatewayFilter, Ordered {
 	private final RedisUserService redisUserService;
 
 	private final UserPublisher userPublisher;
-	private final UserServiceClient userServiceClient;
 
 	private static final String HEADER_ROLES = "X-User-Role";
 
@@ -54,11 +52,6 @@ public class CheckRoleFilter implements GatewayFilter, Ordered {
 
 				Set<String> cache = redisUserService.getRoles(userId);
 				Set<String> roles = extractRoles(jwt);
-
-				// 캐시가 없는 경우, user-service 호출
-				if (cache.isEmpty()) {
-					cache = userServiceClient.getRoles(userId);
-				}
 
 				// token 역할과 DB 역할이 일치하지 않는 경우,
 				if (!cache.equals(roles)) {
