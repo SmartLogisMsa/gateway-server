@@ -1,11 +1,5 @@
 package com.smartlogis.gatewayserver.security;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -23,7 +17,6 @@ public class JwtUserHeaderFilter implements GlobalFilter, Ordered {
 
     private static final String HEADER_USER_ID = "X-User-Id";
     private static final String HEADER_USER_NAME = "X-User-Name";
-    private static final String HEADER_ROLES = "X-User-Role";
 
 	@Override
 	public int getOrder() {
@@ -35,14 +28,11 @@ public class JwtUserHeaderFilter implements GlobalFilter, Ordered {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> securityContext == null ? null : securityContext.getAuthentication())
                 .flatMap(auth -> {
-                    JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) auth;
-                    Jwt jwt = jwtAuth.getToken();
+					Jwt jwt = ((JwtAuthenticationToken) auth).getToken();
 
-                    List<String> roles = extractRoles(jwt);
                     ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
                             .header(HEADER_USER_ID, jwt.getSubject() != null ? jwt.getSubject() : "")
                             .header(HEADER_USER_NAME, jwt.getClaimAsString("preferred_username") != null ? jwt.getClaimAsString("preferred_username") : "")
-                            .header(HEADER_ROLES, roles.stream().filter(s -> s.startsWith("ROLE")).collect(Collectors.joining(",")))
                             .build();
 
                     ServerWebExchange mutatedExchange = exchange.mutate().request(mutatedRequest).build();
@@ -51,30 +41,5 @@ public class JwtUserHeaderFilter implements GlobalFilter, Ordered {
                 });
     }
 
-    private List<String> extractRoles(Jwt jwt) {
-        List<String> result = new ArrayList<>();
-        if (jwt.hasClaim("roles")) {
-            Object v = jwt.getClaim("roles");
-            if (v instanceof Collection) {
-                ((Collection<?>) v).forEach(r -> result.add(r.toString()));
-            }
-        } else if (jwt.hasClaim("realm_access")) {
-            Map<String,Object> realmAccess = jwt.getClaim("realm_access");
-            Object r = realmAccess.get("roles");
-            if (r instanceof Collection) {
-                ((Collection<?>) r).forEach(role -> result.add(role.toString()));
-            }
-        } else if (jwt.hasClaim("resource_access")) {
-            Map<String,Object> resourceAccess = jwt.getClaim("resource_access");
-            resourceAccess.values().forEach(v -> {
-                if (v instanceof Map) {
-                    Object rr = ((Map<?,?>)v).get("roles");
-                    if (rr instanceof Collection) {
-                        ((Collection<?>) rr).forEach(role -> result.add(role.toString()));
-                    }
-                }
-            });
-        }
-        return result;
-    }
+
 }
