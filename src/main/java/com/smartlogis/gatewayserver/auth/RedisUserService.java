@@ -13,7 +13,7 @@ public class RedisUserService {
 
 	private final UserServiceClient userServiceClient;
 
-	@Cacheable(cacheNames = "user", key = "#userId")
+	@Cacheable(cacheNames = "user", key = "#userId", unless = "#result.isEmpty()")
 	public Set<String> getRoles(String userId) {
 		return userServiceClient.getRoles(userId);
 	}
