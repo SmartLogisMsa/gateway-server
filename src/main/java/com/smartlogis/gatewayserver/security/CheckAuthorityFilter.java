@@ -17,7 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 
 import com.smartlogis.gatewayserver.auth.BlacklistService;
-import com.smartlogis.gatewayserver.auth.UserServiceClient;
+import com.smartlogis.gatewayserver.auth.RedisUserService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ import reactor.core.publisher.Mono;
 @Order(Ordered.HIGHEST_PRECEDENCE+1)
 public class CheckAuthorityFilter implements GlobalFilter, Ordered {
 
-	private final UserServiceClient userServiceClient;
+	private final RedisUserService redisUserService;
 	private final BlacklistService blacklistService;
 
 	@Override
@@ -52,20 +52,17 @@ public class CheckAuthorityFilter implements GlobalFilter, Ordered {
 					.collect(Collectors.toSet());
 
 				String userId = jwt.getSubject();
-				return userServiceClient.getRoles(userId)
-					.flatMap(cache -> {
+				Set<String> cache = redisUserService.getRoles(userId);
+				if (!cache.equals(roles)) {
+					log.warn("[CheckAuthorityFilter] Mismatched user roles.");
 
-						if (!cache.equals(roles)) {
-							log.warn("[CheckAuthorityFilter] Mismatched user roles.");
+					long expiration = Math.max(0, jwt.getExpiresAt().getEpochSecond() - System.currentTimeMillis() / 1000);
+					blacklistService.add(jwt.getId(), expiration);
 
-							long expiration = Math.max(0, jwt.getExpiresAt().getEpochSecond() - System.currentTimeMillis() / 1000);
-							blacklistService.add(jwt.getId(), expiration);
-
-							return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-						} else {
-							return chain.filter(exchange);
-						}
-					});
+					return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+				} else {
+					return chain.filter(exchange);
+				}
 			})
 			.switchIfEmpty(chain.filter(exchange));
 	}
