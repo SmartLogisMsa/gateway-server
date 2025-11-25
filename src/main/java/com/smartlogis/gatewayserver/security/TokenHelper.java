@@ -1,5 +1,6 @@
 package com.smartlogis.gatewayserver.security;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -33,5 +34,10 @@ public class TokenHelper {
 			});
 		}
 		return result;
+	}
+
+	public static long getExpiration(Instant expiresAt) {
+		if (expiresAt == null) return 0;
+		return Math.max(0, expiresAt.getEpochSecond() - (System.currentTimeMillis() / 1000));
 	}
 }

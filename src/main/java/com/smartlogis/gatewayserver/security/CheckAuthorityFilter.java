@@ -52,17 +52,19 @@ public class CheckAuthorityFilter implements GlobalFilter, Ordered {
 					.collect(Collectors.toSet());
 
 				String userId = jwt.getSubject();
-				Set<String> cache = redisUserService.getRoles(userId);
-				if (!cache.equals(roles)) {
-					log.warn("[CheckAuthorityFilter] Mismatched user roles.");
+				return redisUserService.getRoles(userId)
+					.flatMap(cache -> {
+						if (!cache.equals(roles)) {
+							log.warn("[CheckAuthorityFilter] Mismatched user roles. {} ≠ {}", roles, cache);
 
-					long expiration = Math.max(0, jwt.getExpiresAt().getEpochSecond() - System.currentTimeMillis() / 1000);
-					blacklistService.add(jwt.getId(), expiration);
+							long expiration = TokenHelper.getExpiration(jwt.getExpiresAt());
+							blacklistService.add(jwt.getId(), expiration);
 
-					return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-				} else {
-					return chain.filter(exchange);
-				}
+							return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+						} else {
+							return chain.filter(exchange);
+						}
+					});
 			})
 			.switchIfEmpty(chain.filter(exchange));
 	}

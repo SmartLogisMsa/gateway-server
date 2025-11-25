@@ -6,7 +6,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RedisBlacklistService implements BlacklistService {
@@ -15,6 +17,10 @@ public class RedisBlacklistService implements BlacklistService {
 
 	@Override
 	public void add(String tokenId, long expiration) {
+		if (expiration <= 0) {
+			log.warn("[RedisBlacklistService] Invalid expiration value: {}", expiration);
+			return;
+		}
 		redisTemplate.opsForValue().set("blacklist:" + tokenId, "true", expiration, TimeUnit.SECONDS);
 	}
 

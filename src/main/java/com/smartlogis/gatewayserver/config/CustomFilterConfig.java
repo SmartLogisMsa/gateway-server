@@ -5,7 +5,6 @@ import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.smartlogis.gatewayserver.auth.BlacklistService;
 import com.smartlogis.gatewayserver.security.LogoutHandlerFilter;
 
 import lombok.RequiredArgsConstructor;
@@ -14,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CustomFilterConfig {
 
-	private final BlacklistService blacklistService;
+	private final LogoutHandlerFilter logoutHandlerFilter;
 
 	@Bean
 	public RouteLocator logoutRouteLocator(RouteLocatorBuilder builder) {
@@ -22,7 +21,7 @@ public class CustomFilterConfig {
 			.route("user-service-logout", r -> r
 				.path("/v1/users/logout")
 				.filters(f -> f
-					.filter(new LogoutHandlerFilter(blacklistService))
+					.filter(logoutHandlerFilter)
 					.rewritePath("/v1/users/logout", "/logout")
 				)
 				.uri("lb://user-service"))
