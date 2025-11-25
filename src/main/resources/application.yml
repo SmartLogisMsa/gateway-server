@@ -15,10 +15,14 @@ spring:
 eureka:
   instance:
     prefer-ip-address: false
-    hostname: code-factory.co.kr
+    hostname: localhost
 
   client:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://${eureka.instance.hostname}:3150/eureka/
+      defaultZone: http://code-factory.co.kr:3150/eureka/
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
