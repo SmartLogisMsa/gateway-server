@@ -16,12 +16,29 @@ public class SwaggerConfig {
 	}
 
 	@Bean
+	public GroupedOpenApi aiApi() {
+		return GroupedOpenApi.builder()
+			.group("ai-api")
+			.displayName("AI API")
+			.pathsToMatch("/v1/ai/**")
+			.build();
+	}
+
+	@Bean
+	public GroupedOpenApi notificationApi() {
+		return GroupedOpenApi.builder()
+			.group("notification-api")
+			.displayName("NOTIFICATION API")
+			.pathsToMatch("/v1/notifications/**")
+			.build();
+	}
+
+	@Bean
 	public GroupedOpenApi hubAPI() {
 		return GroupedOpenApi.builder()
 			.group("hub-api")
 			.displayName("HUB API")
 			.pathsToMatch("/v1/hubs/**")
-			.pathsToMatch("/v1/hub-routes/**")
 			.build();
 	}
 
