@@ -7,6 +7,8 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
+import com.smartlogis.gatewayserver.security.KeycloakClientRoleConverter;
+
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
