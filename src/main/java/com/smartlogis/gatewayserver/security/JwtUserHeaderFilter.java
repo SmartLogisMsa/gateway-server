@@ -6,10 +6,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 
@@ -28,31 +25,27 @@ public class JwtUserHeaderFilter implements GlobalFilter, Ordered {
 
 	@Override
 	public int getOrder() {
-		return HIGHEST_PRECEDENCE + 20;
+		return HIGHEST_PRECEDENCE + 40;
 	}
 
 	@Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        return ReactiveSecurityContextHolder.getContext()
-                .map(SecurityContext::getAuthentication)
-                .flatMap(auth -> {
-					if (!(auth instanceof JwtAuthenticationToken)) return chain.filter(exchange);
+		Jwt jwt = exchange.getAttribute("jwt");
+		if (jwt == null) return chain.filter(exchange);
 
-					Jwt jwt = ((JwtAuthenticationToken) auth).getToken();
-					String roles = TokenHelper.extractRoles(jwt).stream()
-						.filter(r -> r.startsWith("ROLE_")).collect(Collectors.joining(","));
+		log.info("[SmartLogis] Add custom header");
 
-                    ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-							.header(HEADER_ROLES, roles)
-                            .header(HEADER_USER_ID, jwt.getSubject() != null ? jwt.getSubject() : "")
-                            .header(HEADER_USER_NAME, jwt.getClaimAsString("preferred_username") != null ? jwt.getClaimAsString("preferred_username") : "")
-                            .build();
+		String roles = TokenHelper.extractRoles(jwt).stream()
+			.filter(r -> r.startsWith("ROLE_")).collect(Collectors.joining(","));
 
-                    ServerWebExchange mutatedExchange = exchange.mutate().request(mutatedRequest).build();
+		ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+			.header(HEADER_ROLES, roles)
+			.header(HEADER_USER_ID, jwt.getSubject() != null ? jwt.getSubject() : "")
+			.header(HEADER_USER_NAME, jwt.getClaimAsString("preferred_username") != null ? jwt.getClaimAsString("preferred_username") : "")
+			.build();
 
-                    return chain.filter(mutatedExchange);
-                })
-				.switchIfEmpty(chain.filter(exchange));
+		ServerWebExchange mutatedExchange = exchange.mutate().request(mutatedRequest).build();
 
+		return chain.filter(mutatedExchange);
     }
 }

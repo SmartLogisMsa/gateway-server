@@ -6,12 +6,8 @@ import java.util.stream.Collectors;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
@@ -26,7 +22,6 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@Order(Ordered.HIGHEST_PRECEDENCE+1)
 public class CheckAuthorityFilter implements GlobalFilter, Ordered {
 
 	private final RedisUserService redisUserService;
@@ -34,38 +29,35 @@ public class CheckAuthorityFilter implements GlobalFilter, Ordered {
 
 	@Override
 	public int getOrder() {
-		return HIGHEST_PRECEDENCE + 10;
+		return HIGHEST_PRECEDENCE + 20;
 	}
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-		return ReactiveSecurityContextHolder.getContext()
-			.map(SecurityContext::getAuthentication)
-			.flatMap(auth -> {
-				if (!(auth instanceof JwtAuthenticationToken)) return chain.filter(exchange);
+		Jwt jwt = exchange.getAttribute("jwt");
+		if (jwt == null ) return chain.filter(exchange);
 
-				Jwt jwt = ((JwtAuthenticationToken) auth).getToken();
+		log.info("[SmartLogis] Check authority");
 
-				Set<String> roles = TokenHelper.extractRoles(jwt).stream()
-					.filter(r -> r.startsWith("ROLE_"))
-					.map(r -> r.replace("ROLE_", ""))
-					.collect(Collectors.toSet());
+		Set<String> roles = TokenHelper.extractRoles(jwt).stream()
+			.filter(r -> r.startsWith("ROLE_"))
+			.map(r -> r.replace("ROLE_", ""))
+			.collect(Collectors.toSet());
 
-				String userId = jwt.getSubject();
-				return redisUserService.getRoles(userId)
-					.flatMap(cache -> {
-						if (!cache.equals(roles)) {
-							log.warn("[CheckAuthorityFilter] Mismatched user roles. {} ≠ {}", roles, cache);
+		String userId = jwt.getSubject();
 
-							long expiration = TokenHelper.getExpiration(jwt.getExpiresAt());
-							blacklistService.add(jwt.getId(), expiration);
+		return redisUserService.getRoles(userId)
+			.flatMap(cache -> {
+				if (!cache.equals(roles)) {
+					log.warn("[SmartLogis] Mismatched user roles. {} ≠ {}", roles, cache);
 
-							return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-						} else {
-							return chain.filter(exchange);
-						}
-					});
-			})
-			.switchIfEmpty(chain.filter(exchange));
+					long expiration = TokenHelper.getExpiration(jwt.getExpiresAt());
+					blacklistService.add(jwt.getId(), expiration);
+
+					return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+				} else {
+					return chain.filter(exchange);
+				}
+			});
 	}
 }
