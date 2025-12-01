@@ -9,6 +9,9 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 
 import com.smartlogis.gatewayserver.security.KeycloakClientRoleConverter;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
@@ -24,6 +27,8 @@ public class SecurityConfig {
                         .anyExchange().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(conv)))
+				.logout(ServerHttpSecurity.LogoutSpec::disable)
+				.formLogin(ServerHttpSecurity.FormLoginSpec::disable)
                 .build();
     }
 }
